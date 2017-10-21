@@ -4,7 +4,8 @@ import cv2
 import urllib
 import numpy as np
 import time
-                                                                                                                                                         
+from StringIO import StringIO
+from PIL import Image                                                                                                                                                         
 # remotemotion.py 
 # Copyright 2015, Ron Ostafichuk                                                                                                                         
 # MIT License (you are free to use it for anything)                                                                                                                                            
@@ -127,6 +128,19 @@ class MotionStream:
                 timeNow = time.time()
                 jpg = self.aRawBytes[a:b+2]
                 self.aRawBytes = self.aRawBytes[b+2:]
+
+                # in order to stop the Corrupt JPEG data: 1 extraneous bytes before marker 0xd9 error from cv2 without
+                # Recompiling the cv2 module
+                # do some re-encoding with pil to ensure a cv2 accepted JPEG format
+                stream_as_string_io = StringIO(jpg)
+                stream_as_pil = Image.open(stream_as_string_io)
+                output_string = StringIO()
+                stream_as_pil.save(output_string, format="JPEG")
+                new_jpeg_stream = output_string.getvalue()
+                output_string.close()
+                stream_as_string_io.close()
+                jpg = new_jpeg_stream
+
 
                 # read next image
                 self.image1 = self.image2
